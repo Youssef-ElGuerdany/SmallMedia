@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1085291452706",
+    "project_id": "fluttershare-74808",
+    "storage_bucket": "fluttershare-74808.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1085291452706:android:ced6b63bc8cffd271ced7b",
+        "android_client_info": {
+          "package_name": "com.example.fluttershare"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCdPDnGVIw7krn0wCdLSloWykcubvDcCBU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
