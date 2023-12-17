@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttershare/widgets/header.dart';
 import 'package:fluttershare/widgets/progress.dart';
@@ -13,41 +14,59 @@ class Timeline extends StatefulWidget {
 }
 
 class _TimelineState extends State<Timeline> {
+  List<dynamic> users = []; // the list of users
   @override
   void initState() {
-    getUsers();
     super.initState();
+    // createNewUser();
+    // updateUser();
+    deleteUser();
   }
 
-  getUsers() async {
-    // Get users by query selector Where() , and we can also take multupl Where().where.where()...
-    final QuerySnapshot snapshot = await usersRef
-        // limit(1) Query => return one user
-        // .where('postCount', isGreaterThan: 10)
-        // .where('userName', isEqualTo: 'youssef')
-        .orderBy("postCount", descending: true)
-        .get();
+  createNewUser() async {
+    await usersRef.doc('ihweui25').update({
+      'userName': 'Mimi',
+      'isAdmin': true,
+      'postCount': 99,
+    });
+  }
 
-    for (var doc in snapshot.docs) {
-      debugPrint(doc.data().toString());
-      debugPrint(doc.id);
-      debugPrint(doc.exists.toString());
+  updateUser() async {
+    usersRef.doc('ihweui25').set({
+      'userName': 'new mimi',
+      'isAdmin': true,
+      'postCount': 99,
+    });
+  }
+
+  deleteUser() async {
+    final DocumentSnapshot doc = await usersRef.doc('ihweui23').get();
+    if (doc.exists) {
+      doc.reference.delete();
     }
   }
 
-  // getUsersById() async {
-  //   const String userID = 'BwoqR0NN2du7U4VAEI1c';
-  //   final DocumentSnapshot doc = await usersRef.doc(userID).get();
-  //   print(doc.id);
-  //   //  then((DocumentSnapshot doc) {
-  //   //   print(doc.data());
-  //   //   print(doc.id);
-  //   //   print(doc.exists);
-  //   // });
-  // }
-
   @override
   Widget build(BuildContext context) {
-    return Scaffold(appBar: header(isAppTitle: true), body: linearProgress());
+    return Scaffold(
+        appBar: header(isAppTitle: true),
+        body: StreamBuilder<QuerySnapshot>(
+            // here we can use Stream or Future Builder
+            stream: usersRef.snapshots(),
+            builder: (context, snapshot) {
+              if (snapshot.hasData) {
+                // put the data in this list view and use it
+                final List<Text> children = snapshot.data!.docs
+                    .map((doc) => Text(doc['userName']))
+                    .toList();
+                return SizedBox(
+                  child: ListView(
+                    children: children,
+                  ),
+                );
+              } else {
+                return circularProgress();
+              }
+            }));
   }
 }
