@@ -15,6 +15,7 @@ class Search extends StatefulWidget {
 class _SearchState extends State<Search> {
   TextEditingController searchController = TextEditingController();
   Future<QuerySnapshot>? searchResultsFuture;
+  final usersRef = FirebaseFirestore.instance.collection('users');
 
   handleSearch(String query) {
     Future<QuerySnapshot> users =
@@ -34,7 +35,7 @@ class _SearchState extends State<Search> {
       title: TextFormField(
         controller: searchController,
         decoration: InputDecoration(
-          hintText: "Search for a user...",
+          hintText: "Search for a user",
           filled: true,
           prefixIcon: const Icon(
             Icons.account_box,
@@ -103,7 +104,7 @@ class _SearchState extends State<Search> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).primaryColor.withOpacity(0.8),
+      backgroundColor: Colors.white,
       appBar: buildSearchField(),
       body:
           searchResultsFuture == null ? buildNoContent() : buildSearchResults(),

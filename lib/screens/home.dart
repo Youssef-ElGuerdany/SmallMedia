@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttershare/models/user_infos.dart';
@@ -7,14 +6,8 @@ import 'package:fluttershare/screens/activity_feed.dart';
 import 'package:fluttershare/screens/create_account.dart';
 import 'package:fluttershare/screens/profile.dart';
 import 'package:fluttershare/screens/search.dart';
-import 'package:fluttershare/screens/timeline.dart';
 import 'package:fluttershare/screens/upload.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-
-final GoogleSignIn googleSignIn = GoogleSignIn();
-final usersRef = FirebaseFirestore.instance.collection('users');
-final timestamp = DateTime.now();
-late UserInfos currentUser;
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -24,9 +17,15 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  //  VARIABLES
+
   int pageIndex = 0;
   PageController pageController = PageController();
   bool isAuth = false;
+  final GoogleSignIn googleSignIn = GoogleSignIn();
+  final usersRef = FirebaseFirestore.instance.collection('users');
+  final timestamp = DateTime.now();
+   UserInfos? currentUser;
 
   void login() async {
     try {
@@ -101,7 +100,7 @@ class _HomePageState extends State<HomePage> {
     if (!doc.exists) {
       final username =
           await Navigator.push(context, MaterialPageRoute(builder: (context) {
-        return CreateAccount();
+        return const CreateAccount();
       }));
 
       // 3 - get username from create account , use it to make new user document in user collection
@@ -117,8 +116,6 @@ class _HomePageState extends State<HomePage> {
       doc = await usersRef.doc(user.id).get();
     }
     currentUser = UserInfos.fromDocument(doc);
-    debugPrint(currentUser.toString());
-    debugPrint(currentUser.username);
   }
 
   // Auth Screen
@@ -165,8 +162,8 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
-  // UnAuth Screen
 
+  // UnAuth Screen
   Scaffold buildAuthScreen() {
     return Scaffold(
       body: PageView(
@@ -177,12 +174,12 @@ class _HomePageState extends State<HomePage> {
           // Timeline(),
           InkWell(
             onTap: logOut,
-            child: Icon(Icons.logout),
+            child: const Icon(Icons.logout),
           ),
-          ActivityFeed(),
-          Upload(),
-          Search(),
-          Profile()
+          const ActivityFeed(),
+          Upload(currentUser: currentUser),
+          const Search(),
+          const Profile()
         ],
       ),
       bottomNavigationBar: CupertinoTabBar(
