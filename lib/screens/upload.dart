@@ -1,9 +1,16 @@
 import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttershare/models/user_infos.dart';
+import 'package:fluttershare/screens/home.dart';
+import 'package:fluttershare/widgets/progress.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:image/image.dart' as img;
+import 'package:uuid/uuid.dart';
 
 class Upload extends StatefulWidget {
   final UserInfos? currentUser; // Make currentUser nullable
@@ -14,7 +21,14 @@ class Upload extends StatefulWidget {
 }
 
 class _UploadState extends State<Upload> {
+  final timestamp = DateTime.now();
+
+  TextEditingController locationController = TextEditingController();
+  TextEditingController captionController = TextEditingController();
+
   XFile? file;
+  bool isUploading = false;
+  String postId = const Uuid().v4();
 
   handleTakePhoto() async {
     Navigator.pop(context);
@@ -62,6 +76,89 @@ class _UploadState extends State<Upload> {
         });
   }
 
+  clearImage() {
+    setState(() {
+      file = null;
+    });
+  }
+
+  Future<void> compressImage() async {
+    final temporaryDirectory = await getTemporaryDirectory();
+    final path = temporaryDirectory.path;
+
+    if (file != null) {
+      final imageFile = img.decodeImage(File(file!.path).readAsBytesSync());
+
+      if (imageFile != null) {
+        final compressedImageFile = File('$path/img_$postId.jpg')
+          ..writeAsBytesSync(img.encodeJpg(imageFile, quality: 85));
+
+        setState(() {
+          file = XFile(compressedImageFile.path);
+        });
+
+        debugPrint(
+            'Image compressed and saved to: ${compressedImageFile.path}');
+      } else {
+        debugPrint('Error decoding image');
+      }
+    } else {
+      debugPrint('No image selec ted');
+    }
+  }
+
+
+Future<String> uploadImage(XFile xFile) async {
+  // Convert XFile to File
+  File imageFile = File(xFile.path);
+  var storageRef = FirebaseStorage.instance.ref().child('post_$postId.jpg');
+  UploadTask uploadTask = storageRef.putFile(imageFile);
+
+  TaskSnapshot storageSnap = await uploadTask.whenComplete(() => debugPrint('Upload Complete'));
+
+  String downloadUrl = await storageSnap.ref.getDownloadURL();
+
+  return downloadUrl;
+}
+
+  createPostInFireStore(
+      {required String mediaUrl,
+      required String location,
+      required String description}) {
+    postsRef
+        .doc(widget.currentUser!.id)
+        .collection('userPosts')
+        .doc(postId)
+        .set({
+      'postId': postId,
+      'ownerId': widget.currentUser!.id,
+      'username': widget.currentUser!.username,
+      'mediaUrl': mediaUrl,
+      'description': description,
+      'location': location,
+      'timestamp': timestamp,
+      'likes': {}
+    });
+  }
+
+  handleSubmit() async {
+    setState(() {
+      isUploading = true;
+    });
+    await compressImage();
+    String mediaUrl = await uploadImage(file!);
+    createPostInFireStore(
+        mediaUrl: mediaUrl,
+        location: locationController.text,
+        description: captionController.text);
+    captionController.clear();
+    locationController.clear();
+    setState(() {
+      file = null;
+      isUploading = false;
+    });
+  }
+
   Container buildSplashScreen() {
     return Container(
       child: Column(
@@ -85,38 +182,38 @@ class _UploadState extends State<Upload> {
     );
   }
 
-  clearImage() {
-    setState(() {
-      file = null;
-    });
-  }
-
   buildUploadForm() {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.white70,
         leading: IconButton(
             onPressed: clearImage, icon: const Icon(Icons.arrow_back_ios)),
-        actions: const [
-          InkWell(
-            child: Text('post'),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: InkWell(
+              onTap: isUploading ? null : () => handleSubmit(),
+              child: const Text(
+                'post',
+                style:
+                    TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
+              ),
+            ),
           )
         ],
       ),
       body: ListView(
         children: [
+          isUploading ? linearProgress() : const Text(''),
           SizedBox(
             height: 220.0,
             width: MediaQuery.of(context).size.width * 0.8,
             child: Center(
-              child: AspectRatio(
-                aspectRatio: 16 / 9,
-                child: Container(
-                  decoration: BoxDecoration(
-                      image: DecorationImage(
-                          fit: BoxFit.cover,
-                          image: FileImage(File(file!.path)))),
-                ),
+              child: Container(
+                height: 500,
+                decoration: BoxDecoration(
+                    image: DecorationImage(
+                        fit: BoxFit.cover, image: FileImage(File(file!.path)))),
               ),
             ),
           ),
@@ -126,17 +223,18 @@ class _UploadState extends State<Upload> {
               backgroundImage:
                   CachedNetworkImageProvider(widget.currentUser!.photoUrl),
             ),
-            title: const SizedBox(
+            title: SizedBox(
               width: 250.0,
               child: TextField(
-                decoration: InputDecoration(
+                controller: captionController,
+                decoration: const InputDecoration(
                     hintText: 'Write a Caption ...', border: InputBorder.none),
               ),
             ),
           ),
           const Divider(),
-          const ListTile(
-            leading: Icon(
+          ListTile(
+            leading: const Icon(
               Icons.pin_drop,
               color: Colors.orange,
               size: 35.0,
@@ -144,7 +242,8 @@ class _UploadState extends State<Upload> {
             title: SizedBox(
               width: 250.0,
               child: TextField(
-                decoration: InputDecoration(
+                controller: locationController,
+                decoration: const InputDecoration(
                     hintText: 'Where was this photo taken',
                     border: InputBorder.none),
               ),

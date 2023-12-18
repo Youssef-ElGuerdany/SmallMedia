@@ -1,4 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttershare/models/user_infos.dart';
@@ -6,8 +8,11 @@ import 'package:fluttershare/screens/activity_feed.dart';
 import 'package:fluttershare/screens/create_account.dart';
 import 'package:fluttershare/screens/profile.dart';
 import 'package:fluttershare/screens/search.dart';
-import 'package:fluttershare/screens/upload.dart';
+import 'package:fluttershare/screens/upload.dart'; 
 import 'package:google_sign_in/google_sign_in.dart';
+
+Reference storageRef = FirebaseStorage.instance.ref();
+  final postsRef = FirebaseFirestore.instance.collection('posts');
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -25,7 +30,7 @@ class _HomePageState extends State<HomePage> {
   final GoogleSignIn googleSignIn = GoogleSignIn();
   final usersRef = FirebaseFirestore.instance.collection('users');
   final timestamp = DateTime.now();
-   UserInfos? currentUser;
+  UserInfos? currentUser;
 
   void login() async {
     try {
