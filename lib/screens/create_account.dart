@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:fluttershare/widgets/header.dart';
 
@@ -9,17 +11,25 @@ class CreateAccount extends StatefulWidget {
 }
 
 class _CreateAccountState extends State<CreateAccount> {
-   late String username ;
+  late String username;
   final _formKey = GlobalKey<FormState>();
   submit() {
-    _formKey.currentState!.save();
-    Navigator.pop(context, username);
+    final form = _formKey.currentState!;
+    if (form.validate()) {
+      form.save();
+      SnackBar snackbar = SnackBar(content: Text("Welcome $username"));
+      ScaffoldMessenger.of(context).showSnackBar(snackbar);
+      // timer
+      Timer(const Duration(seconds: 2), () {
+        Navigator.pop(context, username);
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: header(titleText: 'set up your profil'),
+        appBar: header(titleText: 'set up your profil',removeBackButton: true),
         body: ListView(
           children: [
             Container(
@@ -32,8 +42,18 @@ class _CreateAccountState extends State<CreateAccount> {
                   Padding(
                     padding: const EdgeInsets.only(top: 20.0),
                     child: Form(
+                        autovalidateMode: AutovalidateMode.always,
                         key: _formKey,
                         child: TextFormField(
+                          validator: (val) {
+                            if (val!.trim().length < 3 || val.isEmpty) {
+                              return 'user name to short';
+                            } else if (val.trim().length > 12) {
+                              return 'user name to long';
+                            } else {
+                              return null;
+                            }
+                          },
                           onSaved: (val) => username = val!,
                           decoration: const InputDecoration(
                               border: OutlineInputBorder(),

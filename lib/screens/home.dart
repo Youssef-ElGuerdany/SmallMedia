@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:fluttershare/models/user_infos.dart';
 import 'package:fluttershare/screens/activity_feed.dart';
 import 'package:fluttershare/screens/create_account.dart';
 import 'package:fluttershare/screens/profile.dart';
@@ -12,6 +14,8 @@ import 'package:google_sign_in/google_sign_in.dart';
 final GoogleSignIn googleSignIn = GoogleSignIn();
 final usersRef = FirebaseFirestore.instance.collection('users');
 final timestamp = DateTime.now();
+late UserInfos currentUser;
+
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -92,26 +96,29 @@ class _HomePageState extends State<HomePage> {
   createUserInFirestore() async {
     // 1 -check if the user exist in suers collection in data base (according to their id )
     final GoogleSignInAccount user = googleSignIn.currentUser!;
-    final DocumentSnapshot doc = await usersRef.doc(user.id).get();
+    DocumentSnapshot doc = await usersRef.doc(user.id).get();
     // 2 -  if the user doesn't exist => take them to create  account page
     if (!doc.exists) {
       final username =
           await Navigator.push(context, MaterialPageRoute(builder: (context) {
         return CreateAccount();
       }));
-      usersRef.doc(user.id).set({
-      'id': user.id,
-      'username': username,
-      'photoUrl' : user.photoUrl,
-      'email' : user.email,
-      'displayName' :user.displayName,
-      'bio' : '',
-      'timestamp': timestamp
 
-    });
+      // 3 - get username from create account , use it to make new user document in user collection
+      usersRef.doc(user.id).set({
+        'id': user.id,
+        'username': username,
+        'photoUrl': user.photoUrl,
+        'email': user.email,
+        'displayName': user.displayName,
+        'bio': '',
+        'timestamp': timestamp
+      });
+      doc = await usersRef.doc(user.id).get();
     }
-    // 3 - get username from create account , use it to make new user document in user collection
-    
+    currentUser = UserInfos.fromDocument(doc);
+    debugPrint(currentUser.toString());
+    debugPrint(currentUser.username);
   }
 
   // Auth Screen
@@ -166,9 +173,12 @@ class _HomePageState extends State<HomePage> {
         controller: pageController,
         onPageChanged: onPageChanged,
         physics: const NeverScrollableScrollPhysics(),
-        children:  [
+        children: [
           // Timeline(),
-          InkWell(onTap: logOut,child: Icon(Icons.logout),),
+          InkWell(
+            onTap: logOut,
+            child: Icon(Icons.logout),
+          ),
           ActivityFeed(),
           Upload(),
           Search(),
