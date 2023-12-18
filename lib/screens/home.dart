@@ -1,6 +1,8 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttershare/screens/activity_feed.dart';
+import 'package:fluttershare/screens/create_account.dart';
 import 'package:fluttershare/screens/profile.dart';
 import 'package:fluttershare/screens/search.dart';
 import 'package:fluttershare/screens/timeline.dart';
@@ -8,7 +10,8 @@ import 'package:fluttershare/screens/upload.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 final GoogleSignIn googleSignIn = GoogleSignIn();
-
+final usersRef = FirebaseFirestore.instance.collection('users');
+final timestamp = DateTime.now();
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -50,19 +53,21 @@ class _HomePageState extends State<HomePage> {
     super.initState();
     pageController = PageController();
     // Detects when the user signs in
-    googleSignIn.onCurrentUserChanged.listen((account) {
-      handleSignIn(account);
-    }, onError: (errorInfos) {
-      debugPrint('Error Sign in: $errorInfos');
-    });
-
-    // Reauthenticate user when the app is opened
-    // googleSignIn
-    //     .signInSilently(suppressErrors: false)
-    //     .then((account) => handleSignIn(account))
-    //     .catchError((errorInfo) {
-    //   debugPrint('Error Sign in: $errorInfo');
-    // });
+    if (googleSignIn.currentUser == null) {
+      googleSignIn.onCurrentUserChanged.listen((account) {
+        handleSignIn(account);
+      }, onError: (errorInfos) {
+        debugPrint('Error Sign in: $errorInfos');
+      });
+    } else {
+      // Reauthenticate user when the app is opened
+      googleSignIn
+          .signInSilently(suppressErrors: false)
+          .then((account) => handleSignIn(account))
+          .catchError((errorInfo) {
+        debugPrint('Error Sign in: $errorInfo');
+      });
+    }
   }
 
   @override
@@ -73,7 +78,7 @@ class _HomePageState extends State<HomePage> {
 
   void handleSignIn(GoogleSignInAccount? account) {
     if (account != null) {
-      debugPrint(account.toString());
+      createUserInFirestore();
       setState(() {
         isAuth = true;
       });
@@ -82,6 +87,31 @@ class _HomePageState extends State<HomePage> {
         isAuth = false;
       });
     }
+  }
+
+  createUserInFirestore() async {
+    // 1 -check if the user exist in suers collection in data base (according to their id )
+    final GoogleSignInAccount user = googleSignIn.currentUser!;
+    final DocumentSnapshot doc = await usersRef.doc(user.id).get();
+    // 2 -  if the user doesn't exist => take them to create  account page
+    if (!doc.exists) {
+      final username =
+          await Navigator.push(context, MaterialPageRoute(builder: (context) {
+        return CreateAccount();
+      }));
+      usersRef.doc(user.id).set({
+      'id': user.id,
+      'username': username,
+      'photoUrl' : user.photoUrl,
+      'email' : user.email,
+      'displayName' :user.displayName,
+      'bio' : '',
+      'timestamp': timestamp
+
+    });
+    }
+    // 3 - get username from create account , use it to make new user document in user collection
+    
   }
 
   // Auth Screen
@@ -136,8 +166,9 @@ class _HomePageState extends State<HomePage> {
         controller: pageController,
         onPageChanged: onPageChanged,
         physics: const NeverScrollableScrollPhysics(),
-        children: const [
-          Timeline(),
+        children:  [
+          // Timeline(),
+          InkWell(onTap: logOut,child: Icon(Icons.logout),),
           ActivityFeed(),
           Upload(),
           Search(),
