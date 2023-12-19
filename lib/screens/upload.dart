@@ -7,6 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:fluttershare/models/user_infos.dart';
 import 'package:fluttershare/screens/home.dart';
 import 'package:fluttershare/widgets/progress.dart';
+import 'package:geocoding/geocoding.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:image/image.dart' as img;
@@ -107,19 +109,19 @@ class _UploadState extends State<Upload> {
     }
   }
 
+  Future<String> uploadImage(XFile xFile) async {
+    // Convert XFile to File 
+    File imageFile = File(xFile.path);
+    var storageRef = FirebaseStorage.instance.ref().child('post_$postId.jpg');
+    UploadTask uploadTask = storageRef.putFile(imageFile);
 
-Future<String> uploadImage(XFile xFile) async {
-  // Convert XFile to File
-  File imageFile = File(xFile.path);
-  var storageRef = FirebaseStorage.instance.ref().child('post_$postId.jpg');
-  UploadTask uploadTask = storageRef.putFile(imageFile);
+    TaskSnapshot storageSnap =
+        await uploadTask.whenComplete(() => debugPrint('Upload Complete'));
 
-  TaskSnapshot storageSnap = await uploadTask.whenComplete(() => debugPrint('Upload Complete'));
+    String downloadUrl = await storageSnap.ref.getDownloadURL();
 
-  String downloadUrl = await storageSnap.ref.getDownloadURL();
-
-  return downloadUrl;
-}
+    return downloadUrl;
+  }
 
   createPostInFireStore(
       {required String mediaUrl,
@@ -181,6 +183,41 @@ Future<String> uploadImage(XFile xFile) async {
       ),
     );
   }
+
+Future<void> getUserLocation() async {
+  try {
+    // Request location permissions if not granted
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+
+    if (permission == LocationPermission.whileInUse || permission == LocationPermission.always) {
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      List<Placemark> placemarks = await placemarkFromCoordinates(
+        position.latitude,
+        position.longitude,
+      );
+
+      Placemark? placemark = placemarks.isNotEmpty ? placemarks[0] : null;
+
+      if (placemark != null) {
+        String formattedAddress = '${placemark.country}  ${placemark.locality}';
+        debugPrint(formattedAddress);
+        locationController.text = formattedAddress;
+      } else {
+        debugPrint('No placemark found');
+      }
+    } else {
+      debugPrint('Location permission denied');
+    }
+  } catch (e) {
+    debugPrint('Error getting user location: $e');
+  }
+}
 
   buildUploadForm() {
     return Scaffold(
@@ -254,8 +291,9 @@ Future<String> uploadImage(XFile xFile) async {
             height: 50.0,
             color: Colors.orange,
             alignment: Alignment.center,
-            child: const InkWell(
-              child: Text('Use current location'),
+            child: InkWell(
+              onTap: getUserLocation,
+              child: const Text('Use current location'),
             ),
           )
         ],
