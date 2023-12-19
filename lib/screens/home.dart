@@ -13,6 +13,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 
 Reference storageRef = FirebaseStorage.instance.ref();
   final postsRef = FirebaseFirestore.instance.collection('posts');
+   UserInfos? currentUser;
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -30,7 +31,6 @@ class _HomePageState extends State<HomePage> {
   final GoogleSignIn googleSignIn = GoogleSignIn();
   final usersRef = FirebaseFirestore.instance.collection('users');
   final timestamp = DateTime.now();
-  UserInfos? currentUser;
 
   void login() async {
     try {
@@ -184,7 +184,7 @@ class _HomePageState extends State<HomePage> {
           const ActivityFeed(),
           Upload(currentUser: currentUser),
           const Search(),
-          const Profile()
+           Profile(profileId: currentUser?.id)
         ],
       ),
       bottomNavigationBar: CupertinoTabBar(

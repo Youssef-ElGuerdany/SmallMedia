@@ -19,10 +19,10 @@ class Upload extends StatefulWidget {
   const Upload({Key? key, required this.currentUser}) : super(key: key);
 
   @override
-  _UploadState createState() => _UploadState();
+  UploadState createState() => UploadState();
 }
 
-class _UploadState extends State<Upload> {
+class UploadState extends State<Upload> {
   final timestamp = DateTime.now();
 
   TextEditingController locationController = TextEditingController();
@@ -78,7 +78,7 @@ class _UploadState extends State<Upload> {
         });
   }
 
-  clearImage() {
+  void clearImage() {
     setState(() {
       file = null;
     });
@@ -161,8 +161,8 @@ class _UploadState extends State<Upload> {
     });
   }
 
-  Container buildSplashScreen() {
-    return Container(
+  SizedBox buildSplashScreen() {
+    return SizedBox(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
@@ -201,6 +201,7 @@ Future<void> getUserLocation() async {
         position.latitude,
         position.longitude,
       );
+      //Get the place mark of the user 
 
       Placemark? placemark = placemarks.isNotEmpty ? placemarks[0] : null;
 
