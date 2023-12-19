@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttershare/models/user_infos.dart';
+import 'package:fluttershare/screens/edit_profile.dart';
 import 'package:fluttershare/screens/home.dart';
 import 'package:fluttershare/widgets/header.dart';
 import 'package:fluttershare/widgets/progress.dart';
@@ -16,19 +17,40 @@ class Profile extends StatefulWidget {
 
 class _ProfileState extends State<Profile> {
   final usersRef = FirebaseFirestore.instance.collection('users');
-  final String? currentUserId = currentUser?.id;
+  final String currentUserId = currentUser!.id;
+  editProfile() {
+    Navigator.push(context, MaterialPageRoute(builder: (context) {
+      return EditProfile(currentUSerId: currentUserId);
+    }));
+  }
+
   buildProfilButton() {
     bool isProfileOwner = currentUserId == widget.profileId;
     if (isProfileOwner) {
-      return buildButton();
+      return buildButton(text: 'Edit Profile', function: editProfile);
     }
   }
 
-  buildButton({String? text, Function? function}) {
+  buildButton({String? text, VoidCallback? function}) {
     return Container(
       padding: const EdgeInsets.only(top: 2.0),
       child: InkWell(
-        child: Container(),
+        onTap: function,
+        child: Container(
+          width: 210.0,
+          height: 24.0,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: Colors.blue,
+            border: Border.all(color: Colors.blue),
+            borderRadius: BorderRadius.circular(5.0),
+          ),
+          child: Text(
+            text ?? '',
+            style: const TextStyle(
+                color: Colors.white, fontWeight: FontWeight.bold),
+          ),
+        ),
       ),
     );
   }
