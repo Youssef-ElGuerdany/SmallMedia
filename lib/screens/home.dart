@@ -4,15 +4,19 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttershare/models/user_infos.dart';
 import 'package:fluttershare/screens/activity_feed.dart';
+import 'package:fluttershare/screens/comments.dart';
 import 'package:fluttershare/screens/create_account.dart';
 import 'package:fluttershare/screens/profile.dart';
 import 'package:fluttershare/screens/search.dart';
 import 'package:fluttershare/screens/upload.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-final usersRef = FirebaseFirestore.instance.collection('users');
-Reference storageRef = FirebaseStorage.instance.ref();
+
 final postsRef = FirebaseFirestore.instance.collection('posts');
+final usersRef = FirebaseFirestore.instance.collection('users');
+final commentsRef = FirebaseFirestore.instance.collection('comments');
 UserInfos? currentUser;
+
+Reference storageRef = FirebaseStorage.instance.ref();
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
