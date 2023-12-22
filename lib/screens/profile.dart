@@ -6,6 +6,7 @@ import 'package:fluttershare/screens/edit_profile.dart';
 import 'package:fluttershare/screens/home.dart';
 import 'package:fluttershare/widgets/header.dart';
 import 'package:fluttershare/widgets/post.dart';
+import 'package:fluttershare/widgets/post_tile.dart';
 import 'package:fluttershare/widgets/progress.dart';
 
 class Profile extends StatefulWidget {
@@ -17,14 +18,12 @@ class Profile extends StatefulWidget {
 }
 
 class _ProfileState extends State<Profile> {
-
-  final usersRef = FirebaseFirestore.instance.collection('users');
   String currentUserId = currentUser!.id;
+  String postOrientation = 'grid';
   bool isLoading = false;
   int postCount = 0;
   List<Post> posts = [];
-  
-  
+
   @override
   void initState() {
     super.initState();
@@ -48,18 +47,18 @@ class _ProfileState extends State<Profile> {
     });
   }
 
- editProfile() {
-  Navigator.push(context, MaterialPageRoute(builder: (context) {
-    return EditProfile(currentUSerId: currentUserId); // Fixed variable name
-  }));
-}
-
-buildProfileButton() {
-  bool isProfileOwner = currentUserId == widget.profileId;
-  if (isProfileOwner) {
-    return buildButton(text: 'Edit Profile', function: editProfile);
+  editProfile() {
+    Navigator.push(context, MaterialPageRoute(builder: (context) {
+      return EditProfile(currentUSerId: currentUserId); // Fixed variable name
+    }));
   }
-}
+
+  buildProfileButton() {
+    bool isProfileOwner = currentUserId == widget.profileId;
+    if (isProfileOwner) {
+      return buildButton(text: 'Edit Profile', function: editProfile);
+    }
+  }
 
   buildButton({String? text, VoidCallback? function}) {
     return Container(
@@ -182,9 +181,59 @@ buildProfileButton() {
   buidldProfilePosts() {
     if (isLoading) {
       return circularProgress();
+    } else if (posts.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.only(top: 50),
+        child: Center(
+          child: Text(
+            'No content',
+            style: TextStyle(color: Colors.black),
+          ),
+        ),
+      );
+    } else if (postOrientation == 'grid') {
+      List<GridTile> gridTiles = [];
+      for (var post in posts) {
+        gridTiles.add(GridTile(child: PostTile(post: post)));
+      }
+      return GridView.count(
+          crossAxisCount: 3,
+          childAspectRatio: 1.0,
+          mainAxisSpacing: 1.5,
+          crossAxisSpacing: 1.5,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          children: gridTiles);
+    } else if (postOrientation == 'list') {
+      return Column(
+        children: posts,
+      );
     }
-    return Column(
-      children: posts,
+  }
+
+  setPostOrientation(String postOrientation) {
+    setState(() {
+      this.postOrientation = postOrientation;
+    });
+  }
+
+  buildTogglePostOrientation() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: [
+        IconButton(
+            onPressed: () => setPostOrientation('grid'),
+            icon: Icon(
+              Icons.grid_on,
+              color: postOrientation == 'grid' ? Colors.yellow : Colors.grey,
+            )),
+        IconButton(
+            onPressed: () => setPostOrientation('list'),
+            icon: Icon(
+              Icons.list,
+              color: postOrientation == 'list' ? Colors.yellow : Colors.grey,
+            )),
+      ],
     );
   }
 
@@ -195,6 +244,8 @@ buildProfileButton() {
       body: ListView(
         children: [
           buildProfileHeader(),
+          const Divider(),
+          buildTogglePostOrientation(),
           const Divider(
             height: 0.0,
           ),
