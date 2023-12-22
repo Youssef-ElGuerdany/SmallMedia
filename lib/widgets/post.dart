@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:animator/animator.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -47,6 +50,7 @@ class Post extends StatefulWidget {
   }
 
   @override
+  // ignore: no_logic_in_create_state, library_private_types_in_public_api
   _PostState createState() => _PostState(
         postId: postId,
         ownerId: ownerId,
@@ -70,6 +74,7 @@ class _PostState extends State<Post> {
   int likeCount;
   Map likes;
   bool? isLiked;
+  bool showHeart = false;
 
   _PostState({
     required this.postId,
@@ -96,7 +101,7 @@ class _PostState extends State<Post> {
             backgroundColor: Colors.grey,
           ),
           title: GestureDetector(
-            onTap: () => print('showing profile'),
+            onTap: () => debugPrint('showing profile'),
             child: Text(
               user.username,
               style: const TextStyle(
@@ -107,7 +112,7 @@ class _PostState extends State<Post> {
           ),
           subtitle: Text(location),
           trailing: IconButton(
-            onPressed: () => print('deleting post'),
+            onPressed: () => debugPrint('deleting post'),
             icon: const Icon(Icons.more_vert),
           ),
         );
@@ -139,6 +144,13 @@ class _PostState extends State<Post> {
         likeCount += 1;
         isLiked = true;
         likes[currentUserId] = true;
+        showHeart = true;
+      });
+
+      Timer(const Duration(milliseconds: 500), () {
+        setState(() {
+          showHeart = false;
+        });
       });
     }
   }
@@ -152,6 +164,21 @@ class _PostState extends State<Post> {
           CustomCashedNetworkImage(
             mediaUrl: mediaUrl,
           ),
+          showHeart
+              ? Animator(
+                  duration: const Duration(milliseconds: 300),
+                  tween: Tween(begin: 0.8, end: 1.4),
+                  builder: (context, anim, widget) => Transform.scale(
+                      scale: anim.value,
+                      child: const Icon(
+                        Icons.favorite,
+                        size: 70.0,
+                        color: Colors.red,
+                      )),
+                  curve: Curves.elasticInOut,
+                  cycles: 0,
+                )
+              : const Text('')
         ],
       ),
     );
