@@ -5,6 +5,7 @@ import 'package:fluttershare/models/user_infos.dart';
 import 'package:fluttershare/screens/edit_profile.dart';
 import 'package:fluttershare/screens/home.dart';
 import 'package:fluttershare/widgets/header.dart';
+import 'package:fluttershare/widgets/post.dart';
 import 'package:fluttershare/widgets/progress.dart';
 
 class Profile extends StatefulWidget {
@@ -16,20 +17,49 @@ class Profile extends StatefulWidget {
 }
 
 class _ProfileState extends State<Profile> {
+
   final usersRef = FirebaseFirestore.instance.collection('users');
-  final String currentUserId = currentUser!.id;
-  editProfile() {
-    Navigator.push(context, MaterialPageRoute(builder: (context) {
-      return EditProfile(currentUSerId: currentUserId);
-    }));
+  String currentUserId = currentUser!.id;
+  bool isLoading = false;
+  int postCount = 0;
+  List<Post> posts = [];
+  
+  
+  @override
+  void initState() {
+    super.initState();
+    getProfilePosts();
   }
 
-  buildProfilButton() {
-    bool isProfileOwner = currentUserId == widget.profileId;
-    if (isProfileOwner) {
-      return buildButton(text: 'Edit Profile', function: editProfile);
-    }
+  void getProfilePosts() async {
+    setState(() {
+      isLoading = true;
+    });
+    QuerySnapshot snapshot = await postsRef
+        .doc(widget.profileId)
+        .collection('userPosts')
+        .orderBy('timestamp', descending: true)
+        .get();
+
+    setState(() {
+      isLoading = false;
+      postCount = snapshot.docs.length;
+      posts = snapshot.docs.map((doc) => Post.fromDocument(doc)).toList();
+    });
   }
+
+ editProfile() {
+  Navigator.push(context, MaterialPageRoute(builder: (context) {
+    return EditProfile(currentUSerId: currentUserId); // Fixed variable name
+  }));
+}
+
+buildProfileButton() {
+  bool isProfileOwner = currentUserId == widget.profileId;
+  if (isProfileOwner) {
+    return buildButton(text: 'Edit Profile', function: editProfile);
+  }
+}
 
   buildButton({String? text, VoidCallback? function}) {
     return Container(
@@ -106,14 +136,14 @@ class _ProfileState extends State<Profile> {
                               mainAxisSize: MainAxisSize.max,
                               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                               children: [
-                                buildCountColumn('posts', 0),
+                                buildCountColumn('posts', postCount),
                                 buildCountColumn('followers', 0),
                                 buildCountColumn('following', 0),
                               ],
                             ),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              children: [buildProfilButton()],
+                              children: [buildProfileButton()],
                             )
                           ],
                         ))
@@ -149,6 +179,15 @@ class _ProfileState extends State<Profile> {
         });
   }
 
+  buidldProfilePosts() {
+    if (isLoading) {
+      return circularProgress();
+    }
+    return Column(
+      children: posts,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -156,6 +195,10 @@ class _ProfileState extends State<Profile> {
       body: ListView(
         children: [
           buildProfileHeader(),
+          const Divider(
+            height: 0.0,
+          ),
+          buidldProfilePosts(),
         ],
       ),
     );

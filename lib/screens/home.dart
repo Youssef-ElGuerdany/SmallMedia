@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -8,12 +7,12 @@ import 'package:fluttershare/screens/activity_feed.dart';
 import 'package:fluttershare/screens/create_account.dart';
 import 'package:fluttershare/screens/profile.dart';
 import 'package:fluttershare/screens/search.dart';
-import 'package:fluttershare/screens/upload.dart'; 
+import 'package:fluttershare/screens/upload.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-
+final usersRef = FirebaseFirestore.instance.collection('users');
 Reference storageRef = FirebaseStorage.instance.ref();
-  final postsRef = FirebaseFirestore.instance.collection('posts');
-   UserInfos? currentUser;
+final postsRef = FirebaseFirestore.instance.collection('posts');
+UserInfos? currentUser;
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -29,7 +28,6 @@ class _HomePageState extends State<HomePage> {
   PageController pageController = PageController();
   bool isAuth = false;
   final GoogleSignIn googleSignIn = GoogleSignIn();
-  final usersRef = FirebaseFirestore.instance.collection('users');
   final timestamp = DateTime.now();
 
   void login() async {
@@ -184,7 +182,7 @@ class _HomePageState extends State<HomePage> {
           const ActivityFeed(),
           Upload(currentUser: currentUser),
           const Search(),
-           Profile(profileId: currentUser?.id)
+          Profile(profileId: currentUser?.id)
         ],
       ),
       bottomNavigationBar: CupertinoTabBar(
