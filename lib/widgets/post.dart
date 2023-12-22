@@ -1,5 +1,3 @@
-// ignore_for_file: no_logic_in_create_state
-
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -17,59 +15,52 @@ class Post extends StatefulWidget {
   final String mediaUrl;
   final dynamic likes;
 
-  const Post({
-    Key? key,
-    required this.postId,
-    required this.ownerId,
-    required this.username,
-    required this.location,
-    required this.description,
-    required this.mediaUrl,
-    required this.likes,
-  }) : super(key: key);
+  const Post(this.postId, this.ownerId, this.username, this.location,
+      this.description, this.mediaUrl, this.likes,
+      {super.key});
 
   factory Post.fromDocument(DocumentSnapshot doc) {
     return Post(
-      postId: doc['postId'],
-      ownerId: doc['ownerId'],
-      username: doc['username'],
-      location: doc['location'],
-      description: doc['description'],
-      mediaUrl: doc['mediaUrl'],
-      likes: doc['likes'], 
+      doc['postId'],
+      doc['ownerId'],
+      doc['username'],
+      doc['location'],
+      doc['description'],
+      doc['mediaUrl'],
+      doc['likes'],
     );
   }
 
-  int getLikeCount(like) {
-    if (like == null) {
+  int getLikeCount(likes) {
+    // if no likes, return 0
+    if (likes == null) {
       return 0;
     }
-
     int count = 0;
-
-    like.values.forEach((val) {
+    // if the key is explicitly set to true, add a like
+    likes.values.forEach((val) {
       if (val == true) {
-        count++;
+        count += 1;
       }
     });
     return count;
   }
 
   @override
-  State<Post> createState() => _PostState(
-        postId,
-        ownerId,
-        username,
-        location,
-        description,
-        mediaUrl,
-        getLikeCount(likes),
-        likes,
+  _PostState createState() => _PostState(
+        postId: postId,
+        ownerId: ownerId,
+        username: username,
+        location: location,
+        description: description,
+        mediaUrl: mediaUrl,
+        likes: likes,
+        likeCount: getLikeCount(likes),
       );
 }
 
 class _PostState extends State<Post> {
-
+  final String currentUserId = currentUser!.id;
   final String postId;
   final String ownerId;
   final String username;
@@ -78,75 +69,112 @@ class _PostState extends State<Post> {
   final String mediaUrl;
   int likeCount;
   Map likes;
+  bool? isLiked;
 
-  _PostState(
-    this.postId,
-    this.ownerId,
-    this.username,
-    this.location,
-    this.description,
-    this.mediaUrl,
-    this.likeCount,
-    this.likes,
-  );
-  buildPostHeadre() {
+  _PostState({
+    required this.postId,
+    required this.ownerId,
+    required this.username,
+    required this.location,
+    required this.description,
+    required this.mediaUrl,
+    required this.likes,
+    required this.likeCount,
+  });
+
+  buildPostHeader() {
     return FutureBuilder(
-        future: usersRef.doc(ownerId).get(),
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) {
-            return circularProgress();
-          }
-          UserInfos user = UserInfos.fromDocument(snapshot.data!);
-          return ListTile(
-            leading: CircleAvatar(
-              backgroundImage: CachedNetworkImageProvider(user.photoUrl),
-              backgroundColor: Colors.grey,
-            ),
-            title: GestureDetector(
-              child: Text(
-                user.username,
-                style: const TextStyle(
-                    color: Colors.black, fontWeight: FontWeight.bold),
+      future: usersRef.doc(ownerId).get(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return circularProgress();
+        }
+        UserInfos user = UserInfos.fromDocument(snapshot.data!);
+        return ListTile(
+          leading: CircleAvatar(
+            backgroundImage: CachedNetworkImageProvider(user.photoUrl),
+            backgroundColor: Colors.grey,
+          ),
+          title: GestureDetector(
+            onTap: () => print('showing profile'),
+            child: Text(
+              user.username,
+              style: const TextStyle(
+                color: Colors.black,
+                fontWeight: FontWeight.bold,
               ),
             ),
-            subtitle: Text(location),
-            trailing: IconButton(
-              onPressed: () {},
-              icon: const Icon(Icons.more_vert),
-            ),
-          );
-        });
+          ),
+          subtitle: Text(location),
+          trailing: IconButton(
+            onPressed: () => print('deleting post'),
+            icon: const Icon(Icons.more_vert),
+          ),
+        );
+      },
+    );
+  }
+
+  handleLikePost() {
+    bool isLiked = likes[currentUserId] == true;
+
+    if (isLiked) {
+      postsRef
+          .doc(ownerId)
+          .collection('userPosts')
+          .doc(postId)
+          .update({'likes.$currentUserId': false});
+      setState(() {
+        likeCount -= 1;
+        isLiked = false;
+        likes[currentUserId] = false;
+      });
+    } else if (!isLiked) {
+      postsRef
+          .doc(ownerId)
+          .collection('userPosts')
+          .doc(postId)
+          .update({'likes.$currentUserId': true});
+      setState(() {
+        likeCount += 1;
+        isLiked = true;
+        likes[currentUserId] = true;
+      });
+    }
   }
 
   buildPostImage() {
     return GestureDetector(
-      onDoubleTap: () {},
+      onDoubleTap: handleLikePost,
       child: Stack(
         alignment: Alignment.center,
-        children: [
-          chachedNetworkImage(mediaUrl: mediaUrl,)
-          ],
+        children: <Widget>[
+          CustomCashedNetworkImage(
+            mediaUrl: mediaUrl,
+          ),
+        ],
       ),
     );
   }
 
   buildPostFooter() {
     return Column(
-      children: [
+      children: <Widget>[
         Row(
           mainAxisAlignment: MainAxisAlignment.start,
-          children: [
-            const Padding(padding: EdgeInsets.only(top: 40.0, left: 20)),
+          children: <Widget>[
+            const Padding(padding: EdgeInsets.only(top: 40.0, left: 20.0)),
             GestureDetector(
-              child: const Icon(
-                Icons.favorite_border,
+              onTap: handleLikePost,
+              child: Icon(
+                isLiked! ? Icons.favorite : Icons.favorite_border,
                 size: 28.0,
                 color: Colors.pink,
               ),
             ),
             const Padding(padding: EdgeInsets.only(right: 20.0)),
-            const Padding(padding: EdgeInsets.only(top: 40.0, left: 20)),
             GestureDetector(
+              onTap: () => print('showing comments'),
               child: Icon(
                 Icons.chat,
                 size: 28.0,
@@ -156,31 +184,49 @@ class _PostState extends State<Post> {
           ],
         ),
         Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+          children: <Widget>[
             Container(
               margin: const EdgeInsets.only(left: 20.0),
               child: Text(
-                '$username likes ',
+                "$likeCount likes",
                 style: const TextStyle(
-                    color: Colors.black, fontWeight: FontWeight.bold),
+                  color: Colors.black,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
-            Expanded(child: Text( description))
           ],
-        )
+        ),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Container(
+              margin: const EdgeInsets.only(left: 20.0),
+              child: Text(
+                "$username ",
+                style: const TextStyle(
+                  color: Colors.black,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            Expanded(child: Text(description))
+          ],
+        ),
       ],
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    isLiked = (likes[currentUserId] == true);
+
     return Column(
-      mainAxisAlignment: MainAxisAlignment.start,
-      children: [
-        buildPostHeadre(),
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        buildPostHeader(),
         buildPostImage(),
-        buildPostFooter(),
+        buildPostFooter()
       ],
     );
   }
