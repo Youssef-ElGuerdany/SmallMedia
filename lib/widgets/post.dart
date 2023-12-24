@@ -130,6 +130,8 @@ class _PostState extends State<Post> {
           .collection('userPosts')
           .doc(postId)
           .update({'likes.$currentUserId': false});
+      removeLikeFromActivityFeed();
+
       setState(() {
         likeCount -= 1;
         isLiked = false;
@@ -141,6 +143,8 @@ class _PostState extends State<Post> {
           .collection('userPosts')
           .doc(postId)
           .update({'likes.$currentUserId': true});
+      addLikeToAcitvityFeed();
+
       setState(() {
         likeCount += 1;
         isLiked = true;
@@ -154,6 +158,31 @@ class _PostState extends State<Post> {
         });
       });
     }
+  }
+
+  removeLikeFromActivityFeed() {
+    activityFeedRef
+        .doc(ownerId)
+        .collection('feedItems')
+        .doc(postId)
+        .get()
+        .then((doc) {
+      if (doc.exists) {
+        doc.reference.delete();
+      }
+    });
+  }
+
+  addLikeToAcitvityFeed() {
+    activityFeedRef.doc(ownerId).collection('feedItems').doc(postId).set({
+      'type': 'like',
+      'username': currentUser!.username,
+      'userId': currentUser!.id,
+      'userProfileImg': currentUser!.photoUrl,
+      'postId': postId,
+      'mediaUrl': mediaUrl,
+      'timestamp': timestamp
+    });
   }
 
   buildPostImage() {
@@ -265,9 +294,6 @@ showComments(BuildContext context,
     {String? postId, String? ownerId, String? mediaUrl}) {
   Navigator.push(context, MaterialPageRoute(builder: (context) {
     return Comments(
-      postId : postId!,
-      postOwnerId : ownerId!,
-      postMediaUrl : mediaUrl!
-    );
+        postId: postId!, postOwnerId: ownerId!, postMediaUrl: mediaUrl!);
   }));
 }

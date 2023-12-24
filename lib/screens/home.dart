@@ -4,7 +4,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttershare/models/user_infos.dart';
 import 'package:fluttershare/screens/activity_feed.dart';
-import 'package:fluttershare/screens/comments.dart';
 import 'package:fluttershare/screens/create_account.dart';
 import 'package:fluttershare/screens/profile.dart';
 import 'package:fluttershare/screens/search.dart';
@@ -14,6 +13,8 @@ import 'package:google_sign_in/google_sign_in.dart';
 final postsRef = FirebaseFirestore.instance.collection('posts');
 final usersRef = FirebaseFirestore.instance.collection('users');
 final commentsRef = FirebaseFirestore.instance.collection('comments');
+final activityFeedRef = FirebaseFirestore.instance.collection('feed');
+final timestamp = DateTime.now();
 UserInfos? currentUser;
 
 Reference storageRef = FirebaseStorage.instance.ref();
@@ -143,7 +144,7 @@ class _HomePageState extends State<HomePage> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             const Text(
-              'Share App',
+              'فكرة',
               style: TextStyle(
                   color: Colors.white, fontFamily: 'Signatra', fontSize: 80),
             ),
