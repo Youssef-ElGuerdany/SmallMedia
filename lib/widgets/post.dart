@@ -130,6 +130,8 @@ class _PostState extends State<Post> {
           .collection('userPosts')
           .doc(postId)
           .update({'likes.$currentUserId': false});
+
+      // TO inlike post By user    
       removeLikeFromActivityFeed();
 
       setState(() {
@@ -138,19 +140,20 @@ class _PostState extends State<Post> {
         likes[currentUserId] = false;
       });
     } else if (!isLiked) {
-      postsRef
-          .doc(ownerId)
-          .collection('userPosts')
-          .doc(postId)
-          .update({'likes.$currentUserId': true});
-      addLikeToAcitvityFeed();
+              postsRef
+                  .doc(ownerId)
+                  .collection('userPosts')
+                  .doc(postId)
+                  .update({'likes.$currentUserId': true});
+              // add Like Function    
+              addLikeToAcitvityFeed();
 
-      setState(() {
-        likeCount += 1;
-        isLiked = true;
-        likes[currentUserId] = true;
-        showHeart = true;
-      });
+              setState(() {
+                likeCount += 1;
+                isLiked = true;
+                likes[currentUserId] = true;
+                showHeart = true;
+              });
 
       Timer(const Duration(milliseconds: 500), () {
         setState(() {
@@ -161,28 +164,40 @@ class _PostState extends State<Post> {
   }
 
   removeLikeFromActivityFeed() {
-    activityFeedRef
-        .doc(ownerId)
-        .collection('feedItems')
-        .doc(postId)
-        .get()
-        .then((doc) {
-      if (doc.exists) {
-        doc.reference.delete();
-      }
-    });
+    bool isNotPostOwner = currentUserId != ownerId;
+    if (isNotPostOwner) {
+      activityFeedRef
+          .doc(ownerId)
+          .collection('feedItems')
+          .doc(postId)
+          .get()
+          .then((doc) {
+        if (doc.exists) {
+          doc.reference.delete();
+        }
+      });
+    }
   }
 
   addLikeToAcitvityFeed() {
-    activityFeedRef.doc(ownerId).collection('feedItems').doc(postId).set({
-      'type': 'like',
-      'username': currentUser!.username,
-      'userId': currentUser!.id,
-      'userProfileImg': currentUser!.photoUrl,
-      'postId': postId,
-      'mediaUrl': mediaUrl,
-      'timestamp': timestamp
-    });
+    //ADD A NOTIFICATION TO THE POST OWNER 'S ACTIVITY FEED ONLY IF 
+    //COMMENT MADE BY OTHER USERS (TO AVOID GETTING NOTFI FOR OUR OWN LIKE)
+   
+    bool isNotPostOwner = currentUserId != ownerId;
+    if (isNotPostOwner) {
+      activityFeedRef.doc(ownerId)
+      .collection('feedItems')
+      .doc(postId)
+      .set({
+        'type': 'like',
+        'username': currentUser!.username,
+        'userId': currentUser!.id,
+        'userProfileImg': currentUser!.photoUrl,
+        'postId': postId,
+        'mediaUrl': mediaUrl,
+        'timestamp': timestamp
+      });
+    }
   }
 
   buildPostImage() {

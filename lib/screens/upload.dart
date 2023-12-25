@@ -201,7 +201,6 @@ Future<void> getUserLocation() async {
         position.latitude,
         position.longitude,
       );
-      //Get the place mark of the user 
 
       Placemark? placemark = placemarks.isNotEmpty ? placemarks[0] : null;
 

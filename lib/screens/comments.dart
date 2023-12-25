@@ -66,10 +66,25 @@ class _CommentsState extends State<Comments> {
     commentsRef.doc(postId).collection('comments').add({
       'username': currentUser?.username ?? 'Unknown User',
       'comment': commentController.text,
-      'timestamp': FieldValue.serverTimestamp(),
+      'timestamp':timestamp,
       'avatarUrl': currentUser?.photoUrl ?? '',
       'userId': currentUser?.id ?? '',
     });
+ 
+    bool isNotPostOwner = postOwnerId != currentUser!.id;
+    if (isNotPostOwner) {
+      activityFeedRef.doc(postOwnerId).collection('feedItems').add({
+        'type': 'comment',
+        'commentData': commentController.text,
+        'timestamp': timestamp,
+        'postId': postId,
+        'userId': currentUser!.id,
+        'username': currentUser!.username,
+        'userProfileImg': currentUser!.photoUrl,
+        'mediaUrl': postMediaUrl,
+      });
+    }
+
     commentController.clear();
   }
 
@@ -86,7 +101,8 @@ class _CommentsState extends State<Comments> {
           ListTile(
             title: TextFormField(
               controller: commentController,
-              decoration: const InputDecoration(labelText: 'Write a comment ...'),
+              decoration:
+                  const InputDecoration(labelText: 'Write a comment ...'),
             ),
             trailing: OutlinedButton(
               onPressed: addComment,
@@ -115,16 +131,16 @@ class Comment extends StatelessWidget {
     required this.timestamp,
   }) : super(key: key);
 
- factory Comment.fromDocument(DocumentSnapshot doc) {
-  return Comment(
-    avatarUrl: doc['avatarUrl'],
-    comment: doc['comment'],
-    timestamp: doc['timestamp'] as Timestamp? ?? Timestamp.now(), // Handle null
-    userId: doc['userId'],
-    username: doc['username'],
-  );
-}
-
+  factory Comment.fromDocument(DocumentSnapshot doc) {
+    return Comment(
+      avatarUrl: doc['avatarUrl'],
+      comment: doc['comment'],
+      timestamp:
+          doc['timestamp'] as Timestamp? ?? Timestamp.now(), // Handle null
+      userId: doc['userId'],
+      username: doc['username'],
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
