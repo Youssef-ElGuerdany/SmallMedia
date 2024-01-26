@@ -1,26 +1,44 @@
 {
   "project_info": {
-    "project_number": "1085291452706",
-    "project_id": "fluttershare-74808",
-    "storage_bucket": "fluttershare-74808.appspot.com"
+    "project_number": "20060645538",
+    "project_id": "fikra-d0835",
+    "storage_bucket": "fikra-d0835.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:1085291452706:android:ced6b63bc8cffd271ced7b",
+        "mobilesdk_app_id": "1:20060645538:android:9ffba85ac7da538ef84ffb",
         "android_client_info": {
-          "package_name": "com.example.fluttershare"
+          "package_name": "com.main.fikra"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "20060645538-jsh7pskm0adk642qpesaahkq4bvoo09e.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.main.fikra",
+            "certificate_hash": "6b6d4e8d786181fa92ffc9a1ea8bfafd686eeab3"
+          }
+        },
+        {
+          "client_id": "20060645538-g94obl3insk68l5qv0i302c6dhdo5arr.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
-          "current_key": "AIzaSyCdPDnGVIw7krn0wCdLSloWykcubvDcCBU"
+          "current_key": "AIzaSyAG1EjvFPI83YN7WKiNITgZS9fWAFxyYIg"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "20060645538-g94obl3insk68l5qv0i302c6dhdo5arr.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
